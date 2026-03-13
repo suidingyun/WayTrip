@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-header">
         <span class="logo-icon">✈</span>
-        <h1>欢迎回到 WayTrip</h1>
+        <h1>欢迎回到 说走就走</h1>
         <p>登录以开启精彩旅程</p>
       </div>
       <el-form ref="formRef" :model="form" :rules="rules" size="large" @submit.prevent="handleLogin">

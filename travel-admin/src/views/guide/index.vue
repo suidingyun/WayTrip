@@ -99,6 +99,7 @@
               class="image-uploader"
               :action="uploadUrl"
               :headers="uploadHeaders"
+              name="file"
               :show-file-list="false"
               :on-success="handleUploadSuccess"
               :on-error="handleUploadError"

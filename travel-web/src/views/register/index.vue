@@ -3,7 +3,7 @@
     <div class="register-card">
       <div class="register-header">
         <span class="logo-icon">✈</span>
-        <h1>注册 WayTrip</h1>
+        <h1>注册 说走就走</h1>
         <p>{{ step === 1 ? '创建账号，探索世界' : '完善个人资料（可跳过）' }}</p>
       </div>
 
@@ -148,7 +148,7 @@ const doRegister = async (nickname) => {
       }
     }
 
-    ElMessage.success('注册成功，欢迎来到 WayTrip！')
+    ElMessage.success('注册成功，欢迎来到 说走就走！')
     router.push('/')
   } catch (e) {
     // 注册失败（如手机号已注册），回到第一步修改

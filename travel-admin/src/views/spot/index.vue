@@ -118,7 +118,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="子分类" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择子分类" :disabled="!form.parentCategoryId">
+           <el-select v-model="form.categoryId" placeholder="请选择子分类" :disabled="!form.parentCategoryId">
             <el-option v-for="item in childCategoryOptions" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
@@ -141,6 +141,7 @@
               class="image-uploader"
               :action="uploadUrl"
               :headers="uploadHeaders"
+              name="file"
               :show-file-list="false"
               :on-success="handleUploadSuccess"
               :on-error="handleUploadError"
@@ -158,7 +159,7 @@
                 <span>点击上传</span>
               </div>
             </el-upload>
-            <div class="upload-tip">支持 jpg、png 格式，大小不超过 5MB</div>
+            <div class="upload-tip">支持 jpg、png 格式，大小不超过 10MB</div>
           </div>
         </el-form-item>
         <el-form-item label="景点图片">
@@ -167,6 +168,7 @@
               class="gallery-uploader"
               :action="uploadUrl"
               :headers="uploadHeaders"
+              name="file"
               :show-file-list="false"
               :on-success="handleGalleryUploadSuccess"
               :on-error="handleUploadError"
@@ -317,6 +319,96 @@ const flattenCategories = (nodes = [], level = 0) => {
 
 const categoryOptions = computed(() => flattenCategories(categoryTree.value))
 const leafCategoryOptions = computed(() => categoryOptions.value.filter(item => !item.hasChildren))
+
+// 修复“父分类无数据”：兼容后端返回扁平结构（无 children）
+const parentCategoryOptions = computed(() => {
+  const list = Array.isArray(categoryTree.value) ? categoryTree.value : []
+  if (!list.length) return []
+
+  // 后端可能返回树形（带 children）或扁平（不带 children）
+  const isTree = list.some(item => Array.isArray(item.children) && item.children.length)
+  if (isTree) {
+    return list.filter(item => Array.isArray(item.children) && item.children.length)
+  }
+
+  // 扁平结构：把顶级分类当作“父分类”（parentId 为空/0）
+  return list.filter(item => !item.parentId || item.parentId <= 0)
+})
+
+const childCategoryOptions = computed(() => {
+  if (!form.parentCategoryId) {
+    return []
+  }
+
+  const list = Array.isArray(categoryTree.value) ? categoryTree.value : []
+  if (!list.length) return []
+
+  const isTree = list.some(item => Array.isArray(item.children) && item.children.length)
+  if (isTree) {
+    const parent = list.find(item => item.id === form.parentCategoryId)
+    const children = parent && Array.isArray(parent.children) ? parent.children : []
+
+    // 如果没有子分类，允许“子分类=父分类本身”，避免无数据无法提交
+    if (!children.length && parent) {
+      return [{ id: parent.id, name: parent.name }]
+    }
+
+    return children
+  }
+
+  // 扁平结构：按 parentId 取子分类
+  const parent = list.find(item => item.id === form.parentCategoryId)
+  const children = list.filter(item => item.parentId === form.parentCategoryId)
+
+  if (!children.length && parent) {
+    return [{ id: parent.id, name: parent.name }]
+  }
+
+  return children
+})
+
+// 编辑时回填 parentCategoryId：叶子分类 -> 父分类；顶级分类 -> 自身
+const categoryParentMap = computed(() => {
+  const map = {}
+  const list = Array.isArray(categoryTree.value) ? categoryTree.value : []
+  if (!list.length) return map
+
+  const isTree = list.some(item => Array.isArray(item.children) && item.children.length)
+  if (!isTree) {
+    for (const item of list) {
+      map[item.id] = item.parentId && item.parentId > 0 ? item.parentId : item.id
+    }
+    return map
+  }
+
+  const walk = (nodes, parentId = null) => {
+    for (const node of nodes) {
+      map[node.id] = parentId && parentId > 0 ? parentId : node.id
+      if (Array.isArray(node.children) && node.children.length) {
+        walk(node.children, node.id)
+      }
+    }
+  }
+  walk(list, null)
+  return map
+})
+
+const handleParentCategoryChange = () => {
+  const children = childCategoryOptions.value
+  if (!children.length) {
+    form.categoryId = null
+    return
+  }
+
+  // 只有一个且就是父类本身时，自动回填子分类
+  if (children.length === 1 && children[0].id === form.parentCategoryId) {
+    form.categoryId = form.parentCategoryId
+    return
+  }
+
+  form.categoryId = null
+}
+
 const regionCascaderOptions = computed(() => {
   if (regionTree.value.length) {
     return regionTree.value
@@ -330,20 +422,7 @@ const regionCascaderProps = {
   checkStrictly: true,
   emitPath: true
 }
-const parentCategoryOptions = computed(() => categoryTree.value.filter(item => item.children?.length))
-const childCategoryOptions = computed(() => {
-  if (!form.parentCategoryId) {
-    return []
-  }
-  const parent = categoryTree.value.find(item => item.id === form.parentCategoryId)
-  return parent?.children || []
-})
-const categoryParentMap = computed(() => {
-  return leafCategoryOptions.value.reduce((acc, item) => {
-    acc[item.id] = item.parentId || null
-    return acc
-  }, {})
-})
+
 
 const queryParams = reactive({
   page: 1,
@@ -390,7 +469,7 @@ const rules = {
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
   regionPath: [{ required: true, message: '请选择地区', trigger: 'change' }],
   parentCategoryId: [{ required: true, message: '请选择父分类', trigger: 'change' }],
-  categoryId: [{ required: true, message: '请选择子分类', trigger: 'change' }],
+  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   address: [{ required: true, message: '请输入地址', trigger: 'blur' }]
 }
 
@@ -486,7 +565,21 @@ const handleReset = () => {
 
 const handleAdd = () => {
   editId.value = null
-  Object.assign(form, { name: '', price: 0, regionId: null, regionPath: [], parentCategoryId: null, categoryId: null, address: '', latitude: null, longitude: null, openTime: '', description: '', coverImage: '', images: [] })
+  Object.assign(form, {
+    name: '',
+    price: 0,
+    regionId: null,
+    regionPath: [],
+    parentCategoryId: null,
+    categoryId: null,
+    address: '',
+    latitude: null,
+    longitude: null,
+    openTime: '',
+    description: '',
+    coverImage: '',
+    images: []
+  })
   dialogVisible.value = true
 }
 
@@ -495,9 +588,23 @@ const handleEdit = async (row) => {
   try {
     const res = await getSpotDetail(row.id)
     Object.assign(form, res.data)
+
+    // 地区回填
     form.regionPath = findRegionPathById(form.regionId, regionCascaderOptions.value)
+
+    // 分类回填：child -> parent；顶级分类则 parent=自身
+    const cid = form.categoryId
+    form.parentCategoryId = cid ? (categoryParentMap.value?.[cid] ?? cid) : null
+
+    // 若该父分类无子分类，则自动把子分类设为父分类本身
+    if (form.parentCategoryId) {
+      const children = childCategoryOptions.value
+      if (children.length === 1 && children[0].id === form.parentCategoryId) {
+        form.categoryId = form.parentCategoryId
+      }
+    }
+
     form.images = Array.isArray(res.data.images) ? [...res.data.images] : []
-    form.parentCategoryId = categoryParentMap.value[form.categoryId] || null
     dialogVisible.value = true
   } catch (e) {}
 }
@@ -513,9 +620,6 @@ const handleRatingEdit = async (row) => {
   } catch (e) {}
 }
 
-const handleParentCategoryChange = () => {
-  form.categoryId = null
-}
 
 const handleSubmit = async () => {
   await formRef.value.validate()

@@ -6,7 +6,7 @@
         <div class="navbar-left">
           <router-link to="/" class="logo">
             <span class="logo-icon">✈</span>
-            <span class="logo-text">WayTrip</span>
+            <span class="logo-text">说走就走</span>
           </router-link>
           <nav class="nav-links">
             <router-link to="/" class="nav-link" :class="{ active: isHomeActive }">首页</router-link>
@@ -59,7 +59,7 @@
     <footer class="footer">
       <div class="footer-inner">
         <div class="footer-left">
-          <span class="footer-logo">✈ WayTrip</span>
+          <span class="footer-logo">✈ 说走就走</span>
           <p class="footer-desc">发现旅途之美，开启精彩旅程</p>
         </div>
         <div class="footer-links">
@@ -67,7 +67,7 @@
           <router-link to="/guides">旅行攻略</router-link>
         </div>
         <div class="footer-right">
-          <p>© 2026 WayTrip. All rights reserved.</p>
+          <p>© 2026 说走就走. All rights reserved.</p>
         </div>
       </div>
     </footer>

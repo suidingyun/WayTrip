@@ -33,7 +33,7 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} - WayTrip` : 'WayTrip'
+  document.title = to.meta.title ? `${to.meta.title} - 说走就走` : '说走就走'
 
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {

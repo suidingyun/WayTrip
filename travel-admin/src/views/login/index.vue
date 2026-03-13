@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="title">WayTrip·微旅</h2>
+      <h2 class="title">说走就走</h2>
       <p class="subtitle">管理后台</p>
       <el-form ref="formRef" :model="form" :rules="rules" @keyup.enter="handleLogin">
         <el-form-item prop="username">

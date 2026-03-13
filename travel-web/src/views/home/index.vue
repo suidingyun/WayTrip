@@ -11,7 +11,15 @@
         </div>
       </div>
       <!-- 轮播背景 -->
-      <el-carousel class="hero-carousel" height="480px" :interval="5000" arrow="never" indicator-position="none">
+      <el-carousel
+        class="hero-carousel"
+        height="480px"
+        :interval="5000"
+        :autoplay="true"
+        :pause-on-hover="false"
+        arrow="hover"
+        indicator-position="inside"
+      >
         <el-carousel-item v-for="banner in banners" :key="banner.id">
           <img :src="getImageUrl(banner.imageUrl)" class="hero-bg" alt="" />
         </el-carousel-item>
@@ -142,8 +150,8 @@ const fetchBanners = async () => {
 
 const fetchHotSpots = async () => {
   try {
-    const res = await getHotSpots(8)
-    hotSpots.value = res.data || []
+    const res = await getHotSpots(3)
+    hotSpots.value = (res.data?.list || []).slice(0, 3)
   } catch (e) { /* ignore */ }
 }
 
@@ -291,7 +299,7 @@ onMounted(() => {
 /* ===== Hot Grid ===== */
 .hot-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 

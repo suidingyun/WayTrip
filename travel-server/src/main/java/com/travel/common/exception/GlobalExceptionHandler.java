@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -68,6 +69,13 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         log.warn("约束校验失败: {}", message);
         return ApiResponse.error(ResultCode.PARAM_ERROR, message);
+    }
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, NumberFormatException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleTypeMismatchException(Exception e) {
+        log.warn("参数类型错误: {}", e.getMessage());
+        return ApiResponse.error(ResultCode.PARAM_ERROR, "参数类型错误");
     }
 
     /**

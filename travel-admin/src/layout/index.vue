@@ -3,8 +3,8 @@
     <!-- 侧边栏 -->
     <el-aside :width="isCollapse ? '64px' : '200px'" class="aside">
       <div class="logo">
-        <span v-if="!isCollapse">WayTrip</span>
-        <span v-else>旅</span>
+        <span v-if="!isCollapse">说走就走</span>
+        <span v-else>走</span>
       </div>
       <el-menu
         :default-active="$route.path"
