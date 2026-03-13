@@ -44,7 +44,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<Long> cachedIds = (List<Long>) redisTemplate.opsForValue().get(cacheKey);
         
         if (cachedIds != null && !cachedIds.isEmpty()) {
-            return buildRecommendationResponse(cachedIds, limit, "personalized", false);
+            return buildRecommendationResponse(cachedIds, limit, "personalized", false, "猜你喜欢");
         }
 
         return computeRecommendations(userId, limit);
@@ -88,7 +88,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         String cacheKey = USER_REC_KEY + userId;
         redisTemplate.opsForValue().set(cacheKey, filteredIds, 1, TimeUnit.HOURS);
 
-        return buildRecommendationResponse(filteredIds, limit, "personalized", false);
+        return buildRecommendationResponse(filteredIds, limit, "personalized", false, "猜你喜欢");
     }
 
 
@@ -115,27 +115,70 @@ public class RecommendationServiceImpl implements RecommendationService {
             );
 
             List<Long> spotIds = spots.stream().map(Spot::getId).collect(Collectors.toList());
-            return buildRecommendationResponse(spotIds, limit, "preference", false);
+            return buildRecommendationResponse(spotIds, limit, "preference", false, "根据您的偏好推荐");
         }
 
-        // 无偏好，返回热门并提示设置偏好
-        HotSpotResponse hotSpots = getHotSpots(limit);
+        // 无偏好，返回热门并提示设置偏好（优先推荐当季热门）
+        // 获取当前月份
+        int currentMonth = java.time.LocalDate.now().getMonthValue();
+        String currentMonthStr = String.valueOf(currentMonth);
+
+        Map<Long, String> categoryMap = getCategoryMap();
+        Map<Long, String> regionMap = getRegionMap();
+
+        List<Spot> spots = spotMapper.selectList(
+            new LambdaQueryWrapper<Spot>()
+                .eq(Spot::getIsPublished, 1)
+                .eq(Spot::getIsDeleted, 0)
+                .and(w -> w.like(Spot::getBestSeason, currentMonthStr).or().isNull(Spot::getBestSeason).or().eq(Spot::getBestSeason, ""))
+                .orderByDesc(Spot::getHeatScore)
+                .last("LIMIT " + limit)
+        );
+        
+        // 如果当季景点不足，补充全局热门
+        if (spots.size() < limit) {
+            List<Long> existingIds = spots.stream().map(Spot::getId).collect(Collectors.toList());
+            List<Spot> globalHot = spotMapper.selectList(
+                new LambdaQueryWrapper<Spot>()
+                    .eq(Spot::getIsPublished, 1)
+                    .eq(Spot::getIsDeleted, 0)
+                    .notIn(!existingIds.isEmpty(), Spot::getId, existingIds)
+                    .orderByDesc(Spot::getHeatScore)
+                    .last("LIMIT " + (limit - spots.size()))
+            );
+            spots.addAll(globalHot);
+        }
+
         RecommendationResponse response = new RecommendationResponse();
         response.setType("hot");
         response.setNeedPreference(true);
-        response.setList(hotSpots.getList().stream()
+        response.setList(spots.stream()
             .map(item -> {
                 RecommendationResponse.SpotItem spotItem = new RecommendationResponse.SpotItem();
                 spotItem.setId(item.getId());
                 spotItem.setName(item.getName());
-                spotItem.setCoverImage(item.getCoverImage());
+                spotItem.setCoverImage(item.getCoverImageUrl());
                 spotItem.setPrice(item.getPrice());
                 spotItem.setAvgRating(item.getAvgRating());
-                spotItem.setCategoryName(item.getCategoryName());
+                spotItem.setCategoryName(categoryMap.get(item.getCategoryId()));
+                spotItem.setRegionName(regionMap.get(item.getRegionId()));
+                spotItem.setReason(isBestSeason(item.getBestSeason()) ? "当季热门推荐" : "全站热门推荐");
+                spotItem.setTags(parseTags(item.getTags()));
                 return spotItem;
             })
             .collect(Collectors.toList()));
         return response;
+    }
+
+    private boolean isBestSeason(String bestSeason) {
+        if (bestSeason == null || bestSeason.isEmpty()) return false;
+        int currentMonth = java.time.LocalDate.now().getMonthValue();
+        return Arrays.asList(bestSeason.split(",")).contains(String.valueOf(currentMonth));
+    }
+
+    private List<String> parseTags(String tags) {
+        if (tags == null || tags.isEmpty()) return Collections.emptyList();
+        return Arrays.asList(tags.split(","));
     }
 
     /**
@@ -357,7 +400,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         return dotProduct / (Math.sqrt(normI) * Math.sqrt(normJ));
     }
 
-    private RecommendationResponse buildRecommendationResponse(List<Long> spotIds, Integer limit, String type, Boolean needPreference) {
+    private RecommendationResponse buildRecommendationResponse(List<Long> spotIds, Integer limit, String type, Boolean needPreference, String defaultReason) {
         List<Long> limitedIds = spotIds.stream().limit(limit).collect(Collectors.toList());
         
         if (limitedIds.isEmpty()) {
@@ -391,6 +434,11 @@ public class RecommendationServiceImpl implements RecommendationService {
                 item.setRatingCount(spot.getRatingCount());
                 item.setCategoryName(categoryMap.get(spot.getCategoryId()));
                 item.setRegionName(regionMap.get(spot.getRegionId()));
+                
+                // 设置推荐理由和标签
+                item.setReason(isBestSeason(spot.getBestSeason()) ? "当季热门推荐" : defaultReason);
+                item.setTags(parseTags(spot.getTags()));
+                
                 return item;
             })
             .collect(Collectors.toList()));

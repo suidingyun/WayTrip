@@ -319,6 +319,9 @@ public class SpotServiceImpl implements SpotService {
         response.setAvgRating(spot.getAvgRating());
         response.setRatingCount(spot.getRatingCount());
         response.setHeatScore(spot.getHeatScore());
+        response.setBestSeason(spot.getBestSeason());
+        response.setTags(spot.getTags());
+        response.setRecommendedDuration(spot.getRecommendedDuration());
 
         return response;
     }
@@ -401,6 +404,8 @@ public class SpotServiceImpl implements SpotService {
                 .ratingCount(spot.getRatingCount())
                 .regionName(getRegionName(spot.getRegionId()))
                 .categoryName(getCategoryName(spot.getCategoryId()))
+                .bestSeason(spot.getBestSeason())
+                .tags(spot.getTags())
                 .build();
     }
 
@@ -412,6 +417,8 @@ public class SpotServiceImpl implements SpotService {
                 .price(spot.getPrice())
                 .regionName(getRegionName(spot.getRegionId()))
                 .categoryName(getCategoryName(spot.getCategoryId()))
+                .bestSeason(spot.getBestSeason())
+                .tags(spot.getTags())
                 .avgRating(spot.getAvgRating())
                 .ratingCount(spot.getRatingCount())
                 .heatScore(spot.getHeatScore())
@@ -539,6 +546,15 @@ public class SpotServiceImpl implements SpotService {
         }
         if (request.getHeatScore() != null) {
             spot.setHeatScore(request.getHeatScore());
+        }
+        if (request.getBestSeason() != null) {
+            spot.setBestSeason(request.getBestSeason());
+        }
+        if (request.getTags() != null) {
+            spot.setTags(request.getTags());
+        }
+        if (request.getRecommendedDuration() != null) {
+            spot.setRecommendedDuration(request.getRecommendedDuration());
         }
     }
 

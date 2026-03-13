@@ -18,4 +18,6 @@ public class SpotListResponse {
     private Integer ratingCount;
     private String regionName;
     private String categoryName;
+    private String bestSeason;
+    private String tags;
 }

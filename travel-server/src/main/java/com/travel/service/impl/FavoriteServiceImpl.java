@@ -134,6 +134,8 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .ratingCount(spot.getRatingCount())
                 .regionName(getRegionName(spot.getRegionId()))
                 .categoryName(getCategoryName(spot.getCategoryId()))
+                .bestSeason(spot.getBestSeason())
+                .tags(spot.getTags())
                 .build();
     }
 

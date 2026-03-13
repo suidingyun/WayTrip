@@ -90,6 +90,15 @@ VALUES
    29.5630000, 106.5780000, '/uploads/images/default.jpg',
    4, 8, 7200, 4.4, 3, 1);
 
+UPDATE `spot` SET best_season='4,5,9,10', tags='历史文化,博物馆,亲子,摄影,城市观光', crowd_tags='亲子,研学,老人', time_tags='白天,晴天', holiday_tags='国庆,春节', recommended_duration='3-5小时' WHERE name='故宫博物院';
+UPDATE `spot` SET best_season='4,5,6,9,10', tags='历史文化,园林,亲子,徒步,摄影', crowd_tags='亲子,老人,情侣', time_tags='白天,晴天', holiday_tags='清明,国庆', recommended_duration='3-4小时' WHERE name='颐和园';
+UPDATE `spot` SET best_season='3,4,5,9,10,11', tags='自然风光,湖泊,徒步,摄影,情侣,休闲度假', crowd_tags='情侣,亲子,老人', time_tags='白天,日落', holiday_tags='五一,国庆', recommended_duration='半天-1天' WHERE name='西湖';
+UPDATE `spot` SET best_season='1,2,3,4,5,6,7,8,9,10,11,12', tags='主题乐园,亲子,情侣,城市观光', crowd_tags='亲子,情侣', time_tags='白天,夜游,雨天', holiday_tags='暑假,国庆,春节', recommended_duration='1天' WHERE name='上海迪士尼乐园';
+UPDATE `spot` SET best_season='3,4,5,9,10', tags='历史文化,博物馆,研学,城市观光', crowd_tags='研学,亲子,老人', time_tags='白天,室内', holiday_tags='国庆', recommended_duration='2-3小时' WHERE name='兵马俑';
+UPDATE `spot` SET best_season='3,4,5,10,11', tags='亲子,动物,自然风光,科普', crowd_tags='亲子,研学', time_tags='白天,晴天', holiday_tags='暑假,五一', recommended_duration='3-4小时' WHERE name='成都大熊猫繁育研究基地';
+UPDATE `spot` SET best_season='1,2,3,4,5,6,7,8,9,10,11,12', tags='城市观光,夜景,摄影,步行', crowd_tags='情侣,朋友,老人', time_tags='夜游,日落,白天', holiday_tags='跨年,国庆', recommended_duration='1-2小时' WHERE name='外滩';
+UPDATE `spot` SET best_season='1,2,3,4,5,6,7,8,9,10,11,12', tags='城市观光,夜景,美食,摄影,打卡', crowd_tags='情侣,朋友', time_tags='夜游,雨天', holiday_tags='国庆,春节', recommended_duration='1-2小时' WHERE name='洪崖洞';
+
 -- ============================================================
 -- 5. spot_image 景点图片（10条，每景点1~2张）
 -- ============================================================

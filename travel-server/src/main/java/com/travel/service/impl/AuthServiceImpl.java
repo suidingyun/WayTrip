@@ -22,7 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -180,20 +182,39 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void setPreferences(Long userId, List<String> tags) {
-        // 删除旧的偏好
-        UserPreference deletedPreference = new UserPreference();
-        deletedPreference.setIsDeleted(1);
+        List<String> normalizedTags = tags == null ? List.of() : tags.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Set<String> newTagSet = new LinkedHashSet<>(normalizedTags);
+
+        // 先将该用户所有偏好标记为删除（避免需要计算差集）
         userPreferenceMapper.update(
-            deletedPreference,
-            new LambdaQueryWrapper<UserPreference>().eq(UserPreference::getUserId, userId)
+                null,
+                new LambdaUpdateWrapper<UserPreference>()
+                        .eq(UserPreference::getUserId, userId)
+                        .set(UserPreference::getIsDeleted, 1)
         );
 
-        // 插入新的偏好
-        for (String tag : tags) {
-            UserPreference preference = new UserPreference();
-            preference.setUserId(userId);
-            preference.setTag(tag);
-            userPreferenceMapper.insert(preference);
+        // 再逐个“恢复或插入”
+        for (String tag : newTagSet) {
+            int updated = userPreferenceMapper.update(
+                    null,
+                    new LambdaUpdateWrapper<UserPreference>()
+                            .eq(UserPreference::getUserId, userId)
+                            .eq(UserPreference::getTag, tag)
+                            .set(UserPreference::getIsDeleted, 0)
+            );
+
+            if (updated == 0) {
+                UserPreference preference = new UserPreference();
+                preference.setUserId(userId);
+                preference.setTag(tag);
+                preference.setIsDeleted(0);
+                userPreferenceMapper.insert(preference);
+            }
         }
     }
 

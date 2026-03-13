@@ -44,6 +44,21 @@ public class Spot {
 
     private Integer isPublished;
 
+    /**
+     * 适宜游玩月份(1-12,逗号分隔)
+     */
+    private String bestSeason;
+
+    /**
+     * 特色标签(逗号分隔)
+     */
+    private String tags;
+
+    /**
+     * 建议游玩时长
+     */
+    private String recommendedDuration;
+
     @TableField("is_deleted")
     private Integer isDeleted;
 

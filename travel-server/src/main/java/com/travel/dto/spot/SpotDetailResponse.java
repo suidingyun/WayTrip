@@ -24,6 +24,9 @@ public class SpotDetailResponse {
     private Integer ratingCount;
     private String regionName;
     private String categoryName;
+    private String bestSeason;
+    private String tags;
+    private String recommendedDuration;
     private Boolean isFavorite;
     private Integer userRating;
     private List<CommentItem> latestComments;

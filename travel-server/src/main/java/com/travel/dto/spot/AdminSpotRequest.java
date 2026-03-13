@@ -38,6 +38,12 @@ public class AdminSpotRequest {
     private Long regionId;
     
     private Long categoryId;
+
+    private String bestSeason;
+
+    private String tags;
+
+    private String recommendedDuration;
     
     private Boolean published = false;
 

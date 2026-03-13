@@ -41,5 +41,7 @@ public class RecommendationResponse {
         private String categoryName;
         private String regionName;
         private Double score; // 推荐分数
+        private String reason; // 推荐理由
+        private List<String> tags; // 标签列表
     }
 }

@@ -17,6 +17,8 @@ public class AdminSpotListResponse {
     private BigDecimal price;
     private String regionName;
     private String categoryName;
+    private String bestSeason;
+    private String tags;
     private BigDecimal avgRating;
     private Integer ratingCount;
     private Integer heatScore;
