@@ -62,10 +62,14 @@
               <text class="rec-name">{{ spot.name }}</text>
               <text class="rec-rating">★ {{ spot.avgRating || '4.5' }}</text>
             </view>
+            <text v-if="spot.reason" class="rec-reason">{{ spot.reason }}</text>
             <text class="rec-desc">{{ spot.intro || '暂无介绍，点击查看详情...' }}</text>
             <view class="rec-footer">
               <text class="rec-tag">{{ spot.categoryName }}</text>
-              <text class="rec-price">¥{{ spot.price }}</text>
+              <view class="rec-footer-right">
+                <text v-if="spot.score != null" class="rec-score">匹配 {{ formatScore(spot.score) }}</text>
+                <text class="rec-price">¥{{ spot.price }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -127,12 +131,17 @@ const selectedCategories = ref([])
 // 推荐类型文案
 const recommendType = computed(() => {
   const types = {
-    personalized: '为你推荐',
-    preference: '根据偏好推荐',
+    personalized: '智能推荐',
+    preference: '偏好推荐',
     hot: '热门推荐'
   }
   return types[recommendationType.value] || '为你推荐'
 })
+
+const formatScore = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : ''
+}
 
 // 获取轮播图
 const fetchBanners = async () => {
@@ -493,6 +502,18 @@ onShow(() => {
   margin-left: 16rpx;
 }
 
+.rec-reason {
+  display: block;
+  font-size: 24rpx;
+  color: #3a3a3c;
+  line-height: 1.45;
+  padding: 16rpx 20rpx;
+  margin-bottom: 12rpx;
+  background: #f2f2f7;
+  border-radius: 16rpx;
+  border-left: 6rpx solid #007AFF;
+}
+
 .rec-desc {
   font-size: 28rpx;
   color: #8E8E93;
@@ -508,6 +529,19 @@ onShow(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.rec-footer-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.rec-score {
+  font-size: 22rpx;
+  color: #8E8E93;
+  white-space: nowrap;
 }
 
 .rec-tag {

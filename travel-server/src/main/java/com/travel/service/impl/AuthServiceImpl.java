@@ -6,9 +6,11 @@ import com.travel.common.exception.BusinessException;
 import com.travel.common.result.ResultCode;
 import com.travel.dto.auth.*;
 import com.travel.entity.Admin;
+import com.travel.entity.SpotCategory;
 import com.travel.entity.User;
 import com.travel.entity.UserPreference;
 import com.travel.mapper.AdminMapper;
+import com.travel.mapper.SpotCategoryMapper;
 import com.travel.mapper.UserMapper;
 import com.travel.mapper.UserPreferenceMapper;
 import com.travel.service.AuthService;
@@ -24,6 +26,8 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final AdminMapper adminMapper;
     private final UserPreferenceMapper userPreferenceMapper;
+    private final SpotCategoryMapper spotCategoryMapper;
     private final JwtUtil jwtUtil;
     private final WxApiUtil wxApiUtil;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -215,6 +220,21 @@ public class AuthServiceImpl implements AuthService {
                 preference.setIsDeleted(0);
                 userPreferenceMapper.insert(preference);
             }
+        }
+
+        Map<String, Long> nameToCategoryId = spotCategoryMapper.selectList(
+                        new LambdaQueryWrapper<SpotCategory>().eq(SpotCategory::getIsDeleted, 0))
+                .stream()
+                .collect(Collectors.toMap(SpotCategory::getName, SpotCategory::getId, (a, b) -> a));
+        String legacyPreferences = newTagSet.stream()
+                .map(nameToCategoryId::get)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        User user = userMapper.selectById(userId);
+        if (user != null) {
+            user.setPreferences(legacyPreferences.isEmpty() ? null : legacyPreferences);
+            userMapper.updateById(user);
         }
     }
 

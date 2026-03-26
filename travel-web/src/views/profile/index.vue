@@ -177,8 +177,17 @@ const avatarInputRef = ref(null)
 const avatarPreview = ref('')
 const avatarFile = ref(null)
 
-const handleMenuSelect = (index) => {
+const handleMenuSelect = async (index) => {
   activeMenu.value = index
+  if (index === 'preference') {
+    try {
+      const res = await getUserInfo()
+      if (res.data) {
+        userStore.setUserInfo(res.data)
+        selectedCategories.value = res.data.preferences || []
+      }
+    } catch (e) { /* ignore */ }
+  }
 }
 
 const fetchUserInfo = async () => {

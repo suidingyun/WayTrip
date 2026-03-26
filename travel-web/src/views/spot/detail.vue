@@ -64,6 +64,16 @@
               <span class="big-price">¥{{ spot.price }}</span>
               <span class="price-label">/人</span>
             </div>
+
+            <!-- 从首页推荐进入时展示匹配度与推荐原因 -->
+            <div v-if="recommendInsight.reason || recommendInsight.score != null" class="recommend-insight">
+              <div class="recommend-insight-title">为您推荐</div>
+              <div v-if="recommendInsight.score != null" class="recommend-insight-score">
+                匹配度：<strong>{{ formatRecScore(recommendInsight.score) }}</strong>
+              </div>
+              <p v-if="recommendInsight.reason" class="recommend-insight-reason">{{ recommendInsight.reason }}</p>
+            </div>
+
             <el-button type="primary" size="large" class="buy-btn" @click="handleBuy">立即购票</el-button>
             <el-button
               :type="spot.isFavorite ? 'warning' : 'default'"
@@ -124,7 +134,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getSpotDetail } from '@/api/spot'
@@ -146,6 +156,32 @@ const hasMoreComments = computed(() => comments.value.length < commentTotal.valu
 const previewVisible = ref(false)
 const previewIndex = ref(0)
 const submittingRating = ref(false)
+
+const REC_STORAGE_PREFIX = 'waytrip_rec_'
+const recommendInsight = reactive({
+  reason: '',
+  score: null
+})
+
+const formatRecScore = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : '-'
+}
+
+function readRecommendationFromEntry() {
+  recommendInsight.reason = ''
+  recommendInsight.score = null
+  const id = route.params.id
+  if (!id) return
+  try {
+    const raw = sessionStorage.getItem(`${REC_STORAGE_PREFIX}${id}`)
+    if (!raw) return
+    const data = JSON.parse(raw)
+    if (data.reason) recommendInsight.reason = data.reason
+    if (data.score != null) recommendInsight.score = data.score
+    sessionStorage.removeItem(`${REC_STORAGE_PREFIX}${id}`)
+  } catch (e) { /* ignore */ }
+}
 
 const ratingForm = reactive({
   score: 5,
@@ -249,9 +285,19 @@ const handleSubmitRating = async () => {
 }
 
 onMounted(() => {
+  readRecommendationFromEntry()
   fetchDetail()
   fetchComments(true)
 })
+
+watch(
+  () => route.params.id,
+  () => {
+    readRecommendationFromEntry()
+    fetchDetail()
+    fetchComments(true)
+  }
+)
 </script>
 
 <style lang="scss" scoped>
@@ -392,6 +438,35 @@ onMounted(() => {
 
 .spot-price-row {
   margin-bottom: 16px;
+}
+
+.recommend-insight {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #f4f4f5;
+  border-radius: 8px;
+  border-left: 4px solid #409eff;
+}
+
+.recommend-insight-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.recommend-insight-score {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 6px;
+}
+
+.recommend-insight-reason {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .big-price {

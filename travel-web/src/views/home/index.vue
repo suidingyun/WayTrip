@@ -57,12 +57,13 @@
         </div>
       </section>
 
-      <!-- 个性化推荐 -->
+      <!-- 个性化推荐（含冷启动热门 / 内容推荐 / 混合协同） -->
       <section class="section">
         <div class="section-header">
           <h2 class="section-title">✨ {{ recommendType }}</h2>
           <el-button text type="primary" :loading="refreshing" @click="handleRefresh">换一批</el-button>
         </div>
+        <p v-if="recommendHint" class="section-hint">{{ recommendHint }}</p>
 
         <!-- 偏好提示 -->
         <div v-if="needPreference && userStore.isLoggedIn" class="preference-tip" @click="showPreferenceDialog = true">
@@ -76,7 +77,7 @@
             v-for="spot in recommendations"
             :key="spot.id"
             class="recommend-card card"
-            @click="$router.push(`/spots/${spot.id}`)"
+            @click="goRecommendSpot(spot)"
           >
             <img :src="getImageUrl(spot.coverImage)" class="rec-img" alt="" />
             <div class="rec-content">
@@ -84,10 +85,13 @@
                 <h3 class="rec-name">{{ spot.name }}</h3>
                 <span class="star-text">★ {{ spot.avgRating || '4.5' }}</span>
               </div>
-              <p class="rec-desc">{{ spot.intro || '暂无介绍，点击查看详情...' }}</p>
+              <p class="rec-desc">{{ spot.intro || '暂无介绍，点击进入详情可查看推荐说明...' }}</p>
               <div class="rec-bottom">
                 <span class="tag">{{ spot.categoryName }}</span>
-                <span class="price">¥{{ spot.price }}</span>
+                <div class="rec-bottom-right">
+                  <span v-if="spot.score != null" class="rec-score">匹配度 {{ formatScore(spot.score) }}</span>
+                  <span class="price">¥{{ spot.price }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -117,15 +121,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getBanners, getHotSpots, getRecommendations, refreshRecommendations } from '@/api/home'
 import { getFilters } from '@/api/spot'
-import { setPreferences } from '@/api/auth'
+import { setPreferences, getUserInfo } from '@/api/auth'
 import { getImageUrl } from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const userStore = useUserStore()
+
+const REC_STORAGE_PREFIX = 'waytrip_rec_'
+
+/** 进入详情时带上推荐理由（仅列表不展示长文案） */
+function goRecommendSpot(spot) {
+  if (spot.reason || spot.score != null) {
+    try {
+      sessionStorage.setItem(
+        `${REC_STORAGE_PREFIX}${spot.id}`,
+        JSON.stringify({ reason: spot.reason || '', score: spot.score ?? null })
+      )
+    } catch (e) { /* ignore */ }
+  }
+  router.push(`/spots/${spot.id}`)
+}
 
 const banners = ref([])
 const hotSpots = ref([])
@@ -136,10 +157,30 @@ const showPreferenceDialog = ref(false)
 const savingPref = ref(false)
 const refreshing = ref(false)
 const needPreference = ref(false)
+const recommendationType = ref('hot')
 
-const recommendType = computed(() =>
-  needPreference.value ? '热门推荐' : '为你推荐'
-)
+const recommendType = computed(() => {
+  const types = {
+    personalized: '智能推荐',
+    preference: '偏好推荐',
+    hot: '热门推荐'
+  }
+  return types[recommendationType.value] || '为你推荐'
+})
+
+/** 说明当前列表是「混合协同+内容」还是「冷启动」等，避免误以为只有一句时令热门 */
+const recommendHint = computed(() => {
+  if (recommendationType.value === 'personalized') {
+    return '列表仅显示匹配度；点击进入景点详情页可查看完整推荐原因（协同/内容匹配说明）。'
+  }
+  if (recommendationType.value === 'preference') {
+    return '已按您在资料中选择的类目偏好生成解释与排序。'
+  }
+  if (recommendationType.value === 'hot') {
+    return '当前为冷启动热门：评价较少或标签未命中时按时令与热度推荐；进入详情可查看简要说明。'
+  }
+  return ''
+})
 
 const fetchBanners = async () => {
   try {
@@ -155,11 +196,17 @@ const fetchHotSpots = async () => {
   } catch (e) { /* ignore */ }
 }
 
+const formatScore = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n.toFixed(2) : ''
+}
+
 const fetchRecommendations = async () => {
   try {
     const res = await getRecommendations(6)
     recommendations.value = res.data?.list || res.data || []
     needPreference.value = res.data?.needPreference || false
+    recommendationType.value = res.data?.type || 'hot'
   } catch (e) { /* ignore */ }
 }
 
@@ -175,6 +222,8 @@ const handleRefresh = async () => {
   try {
     const res = await refreshRecommendations(6)
     recommendations.value = res.data?.list || res.data || []
+    needPreference.value = res.data?.needPreference || false
+    recommendationType.value = res.data?.type || 'hot'
   } catch (e) { /* ignore */ }
   refreshing.value = false
 }
@@ -187,6 +236,25 @@ const toggleCategory = (id) => {
     selectedCategories.value.push(id)
   }
 }
+
+/** 与个人中心一致：用服务端/Store 中的偏好「名称」映射为首页多选所用的类目 id */
+const syncPreferenceDialogFromStore = () => {
+  const names = userStore.userInfo?.preferences
+  if (!names?.length || !categories.value.length) {
+    selectedCategories.value = []
+    return
+  }
+  const ids = []
+  for (const name of names) {
+    const cat = categories.value.find((c) => c.name === name)
+    if (cat) ids.push(cat.id)
+  }
+  selectedCategories.value = ids
+}
+
+watch(showPreferenceDialog, (open) => {
+  if (open) syncPreferenceDialogFromStore()
+})
 
 const savePreferences = async () => {
   if (!selectedCategories.value.length) {
@@ -208,11 +276,17 @@ const savePreferences = async () => {
   savingPref.value = false
 }
 
-onMounted(() => {
+onMounted(async () => {
   fetchBanners()
   fetchHotSpots()
+  await fetchCategories()
+  if (userStore.isLoggedIn) {
+    try {
+      const res = await getUserInfo()
+      if (res.data) userStore.setUserInfo(res.data)
+    } catch (e) { /* ignore */ }
+  }
   fetchRecommendations()
-  fetchCategories()
 })
 </script>
 
@@ -294,6 +368,17 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.section-hint {
+  font-size: 13px;
+  color: #909399;
+  line-height: 1.55;
+  margin: -12px 0 16px;
+  padding: 10px 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
 }
 
 /* ===== Hot Grid ===== */
@@ -423,6 +508,19 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.rec-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-score {
+  font-size: 12px;
+  color: #409eff;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ===== Preference ===== */

@@ -59,6 +59,21 @@ public class Spot {
      */
     private String recommendedDuration;
 
+    /**
+     * 适用人群标签(逗号分隔)
+     */
+    private String crowdTags;
+
+    /**
+     * 推荐游览时段标签(逗号分隔)
+     */
+    private String timeTags;
+
+    /**
+     * 适宜节假日标签(逗号分隔)
+     */
+    private String holidayTags;
+
     @TableField("is_deleted")
     private Integer isDeleted;
 
