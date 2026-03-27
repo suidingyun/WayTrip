@@ -66,8 +66,8 @@ mvn spring-boot:run
 
 服务启动后访问:
 
-- API 服务: http://localhost:8080
-- API 文档: http://localhost:8080/doc.html
+- API 服务: http://localhost:8083
+- API 文档: http://localhost:8083/doc.html
 
 ### 3. 启动 Web 用户端
 
@@ -138,7 +138,7 @@ npm run dev:mp-weixin
 | 用户端       | `/api/v1/*`       | 小程序 & Web 共用 |
 | 管理端       | `/api/admin/v1/*` | 管理后台专用   |
 
-详细接口文档请查看: http://localhost:8080/doc.html
+详细接口文档请查看: http://localhost:8083/doc.html
 
 ## 推荐算法
 

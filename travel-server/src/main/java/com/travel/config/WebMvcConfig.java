@@ -40,6 +40,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v1/spots/search",
                         "/api/v1/spots/filters",
                         "/api/v1/home/**",
+                        "/api/v1/recommendations",
+                        "/api/v1/recommendations/**",
                         "/api/v1/guides",
                         "/api/v1/guides/categories",
                         "/api/admin/v1/auth/login",

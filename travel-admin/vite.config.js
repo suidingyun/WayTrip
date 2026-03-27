@@ -10,7 +10,7 @@ export default defineConfig({
       configureServer(server) {
         server.httpServer?.once('listening', () => {
           setTimeout(() => {
-            console.log(`  \x1b[32m➜\x1b[0m  API文档:  \x1b[36mhttp://localhost:8080/doc.html\x1b[0m`)
+            console.log(`  \x1b[32m➜\x1b[0m  API文档:  \x1b[36mhttp://localhost:8083/doc.html\x1b[0m`)
           }, 100)
         })
       }
@@ -31,7 +31,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8083',
         changeOrigin: true
       }
     }

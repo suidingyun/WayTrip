@@ -126,7 +126,7 @@ import { getBannerList, createBanner, updateBanner, deleteBanner, toggleBannerEn
 import { getSpotList } from '@/api/spot'
 import { useUserStore } from '@/stores/user'
 
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'http://localhost:8083'
 const userStore = useUserStore()
 
 // 上传配置

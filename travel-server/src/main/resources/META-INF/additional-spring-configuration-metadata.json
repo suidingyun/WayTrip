@@ -1,0 +1,29 @@
+{
+  "properties": [
+    {
+      "name": "travel.assistant.chat-memory-dir",
+      "type": "java.lang.String",
+      "description": "Directory for file-based chat memory sessions."
+    },
+    {
+      "name": "travel.assistant.chat-memory-max-messages",
+      "type": "java.lang.Integer",
+      "description": "Max messages to retain per conversation."
+    },
+    {
+      "name": "travel.assistant.rag-local-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable local vector-store RAG."
+    },
+    {
+      "name": "travel.assistant.rag-cloud-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable DashScope cloud knowledge-base RAG."
+    },
+    {
+      "name": "travel.assistant.dashscope-rag-index",
+      "type": "java.lang.String",
+      "description": "DashScope RAG index name."
+    }
+  ]
+}

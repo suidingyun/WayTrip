@@ -117,6 +117,7 @@
         <el-button type="primary" :loading="savingPref" @click="savePreferences">确定</el-button>
       </template>
     </el-dialog>
+
   </div>
 </template>
 

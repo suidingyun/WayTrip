@@ -40,10 +40,15 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     /** 混合：协同过滤权重（约 4:2） */
     private static final double HYBRID_CF_WEIGHT = 4.0 / 6.0;
-
+    // limit表示最多返回多少条推荐列表
     @Override
     public RecommendationResponse getRecommendations(Long userId, Integer limit) {
         if (limit == null || limit <= 0) limit = 10;
+
+        // 未登录：与首页「热门推荐」一致走冷启动时令+热度（原逻辑在拦截器下会因无 Token 失败，前端 catch 后列表为空）
+        if (userId == null) {
+            return handleColdStart(null, limit);
+        }
 
         String cacheKey = USER_REC_KEY + userId;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
@@ -51,19 +56,22 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (cached instanceof RecommendationCachePayload payload
                 && payload.getItems() != null
                 && !payload.getItems().isEmpty()) {
-            return buildFromCachePayload(payload, limit);
+            return buildFromCachePayload(payload, limit); // 从redis缓存中获取推荐列表
         }
-
+       
         if (cached instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Long) {
             redisTemplate.delete(cacheKey);
-        }
-
+        } 
+        // 如果缓存中没有推荐列表，则重新计算推荐列表
         return computeRecommendations(userId, limit);
     }
 
     @Override
     public RecommendationResponse refreshRecommendations(Long userId, Integer limit) {
         if (limit == null || limit <= 0) limit = 10;
+        if (userId == null) {
+            return handleColdStart(null, limit);
+        }
         redisTemplate.delete(USER_REC_KEY + userId);
         return computeRecommendations(userId, limit);
     }
@@ -226,6 +234,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private Set<String> buildUserTagProfile(Long userId) {
+        if (userId == null) {
+            return Collections.emptySet();
+        }
         Set<Long> sourceSpotIds = new LinkedHashSet<>();
 
         reviewMapper.selectList(
@@ -479,6 +490,9 @@ public class RecommendationServiceImpl implements RecommendationService {
      * 从 user_preference 表读标签名，再映射为 spot_category.id（与前端传类目名称一致）
      */
     private List<Long> resolvePreferredCategoryIds(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
         List<UserPreference> prefs = userPreferenceMapper.selectList(
                 new LambdaQueryWrapper<UserPreference>()
                         .eq(UserPreference::getUserId, userId)
@@ -502,7 +516,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private RecommendationResponse handleColdStart(Long userId, Integer limit) {
-        User user = userMapper.selectById(userId);
+        User user = userId == null ? null : userMapper.selectById(userId);
 
         List<Long> categoryIds = resolvePreferredCategoryIds(userId);
         // 兼容旧数据：user 表 preferences 字段曾为「类目 id 逗号分隔」
@@ -647,6 +661,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private Set<Long> getInteractedSpotIds(Long userId) {
+        if (userId == null) {
+            return Collections.emptySet();
+        }
         Set<Long> ratedIds = reviewMapper.selectList(
                 new LambdaQueryWrapper<Review>()
                         .eq(Review::getUserId, userId)

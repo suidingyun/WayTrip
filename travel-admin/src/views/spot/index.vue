@@ -221,7 +221,7 @@ import { Plus } from '@element-plus/icons-vue'
 import { getSpotList, getSpotDetail, createSpot, updateSpot, updatePublishStatus, deleteSpot, getFilters } from '@/api/spot'
 import { useUserStore } from '@/stores/user'
 
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = 'http://localhost:8083'
 const userStore = useUserStore()
 
 // 上传配置

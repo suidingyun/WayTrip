@@ -2,7 +2,7 @@ import { useUserStore } from '@/stores/user'
 
 // 基础 URL 配置
 // Base URLs
-const SERVER_URL = 'http://localhost:8080'
+const SERVER_URL = 'http://localhost:8083'
 const BASE_URL = `${SERVER_URL.replace(/\/$/, '')}/api/v1`
 
 /**

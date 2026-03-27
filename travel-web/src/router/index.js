@@ -11,6 +11,7 @@ const routes = [
       { path: 'spots/:id', name: 'SpotDetail', component: () => import('@/views/spot/detail.vue'), meta: { title: '景点详情' } },
       { path: 'guides', name: 'GuideList', component: () => import('@/views/guide/list.vue'), meta: { title: '攻略列表' } },
       { path: 'guides/:id', name: 'GuideDetail', component: () => import('@/views/guide/detail.vue'), meta: { title: '攻略详情' } },
+      { path: 'assistant', name: 'Assistant', component: () => import('@/views/assistant/index.vue'), meta: { title: '小途助手' } },
       { path: 'orders', name: 'OrderList', component: () => import('@/views/order/list.vue'), meta: { title: '我的订单', requiresAuth: true } },
       { path: 'orders/:id', name: 'OrderDetail', component: () => import('@/views/order/detail.vue'), meta: { title: '订单详情', requiresAuth: true } },
       { path: 'order/create/:spotId', name: 'OrderCreate', component: () => import('@/views/order/create.vue'), meta: { title: '创建订单', requiresAuth: true } },

@@ -1,18 +1,32 @@
 server:
-  port: 8080
+  port: 8083
   tomcat:
     max-http-form-post-size: 20MB
     max-swallow-size: -1
 
 spring:
   config:
-    import: optional:file:.env[.properties]  # 从 .env 文件加载配置（文件不存在时不报错）
+    # .env 由 DotenvEnvironmentPostProcessor 早期加载（见 META-INF/.../EnvironmentPostProcessor）
+    # 此处可再挂标准 .properties（可选）
+    import: optional:file:.env.properties
   profiles:
-    active: dev # 切换为开发环境配置
+    # 旅游助手：在 travel-server/.env 配置 DASHSCOPE_API_KEY（或系统环境变量 AI_/SPRING_AI_ 系列）；不需要助手时用 active: dev,noai
+    active: dev
+  ai:
+    dashscope:
+      # 必须由实际子键（api-key），不能只有无子键的 dashscope:。占位符由 DotenvEnvironmentPostProcessor 注入的 DASHSCOPE_* 等解析（早于 application.yml）
+      api-key: ${AI_DASHSCOPE_API_KEY:${SPRING_AI_DASHSCOPE_API_KEY:${DASHSCOPE_API_KEY:}}}
+      chat:
+        api-key: ${AI_DASHSCOPE_API_KEY:${SPRING_AI_DASHSCOPE_API_KEY:${DASHSCOPE_API_KEY:}}}
+      embedding:
+        api-key: ${AI_DASHSCOPE_API_KEY:${SPRING_AI_DASHSCOPE_API_KEY:${DASHSCOPE_API_KEY:}}}
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
     default-property-inclusion: non_null
+  mvc:
+    async:
+      request-timeout: 120000
   servlet:
     multipart:
       max-file-size: 10MB
@@ -43,5 +57,14 @@ logging:
   config: classpath:logback-spring.xml
   level:
     root: INFO
-    com.travel: DEBUG
+    "[com.travel]": DEBUG
 
+# 旅游 AI 助手（Spring AI）
+travel:
+  assistant:
+    chat-memory-dir: ./tmp/travel-chat-memory
+    chat-memory-max-messages: 32
+    # 本地向量 RAG：为 true 时启动会解析 assistant-docs/*.md 并对每个片段调用 Embedding，语料大时可能卡住数分钟且无新日志
+    rag-local-enabled: false
+    rag-cloud-enabled: false
+    dashscope-rag-index: waytrip-guides

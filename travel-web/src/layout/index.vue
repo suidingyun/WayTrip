@@ -12,6 +12,7 @@
             <router-link to="/" class="nav-link" :class="{ active: isHomeActive }">首页</router-link>
             <router-link to="/spots" class="nav-link" active-class="active">景点</router-link>
             <router-link to="/guides" class="nav-link" active-class="active">攻略</router-link>
+            <router-link to="/assistant" class="nav-link" active-class="active">小途助手</router-link>
           </nav>
         </div>
         <div class="navbar-right">
@@ -71,18 +72,45 @@
         </div>
       </div>
     </footer>
+
+    <!-- 专页 /assistant 已有完整聊天区，避免重复悬浮钮 -->
+    <TravelAssistantChat
+      v-if="route.name !== 'Assistant'"
+      :spot-id="assistantSpotId"
+      :province="assistantProvince"
+      variant="fab"
+    />
   </div>
 </template>
 
 <script setup>
-import { useUserStore } from '@/stores/user'
-import { useRouter, useRoute } from 'vue-router'
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import TravelAssistantChat from '@/components/TravelAssistantChat.vue'
+import { useUserStore } from '@/stores/user'
+import { useAssistantSpotStore } from '@/stores/assistantSpot'
 
 const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
+
+const assistantSpotStore = useAssistantSpotStore()
+const { spotId: ctxSpotId, province: ctxProvince } = storeToRefs(assistantSpotStore)
+
+const assistantSpotId = computed(() => {
+  if (ctxSpotId.value != null && !Number.isNaN(ctxSpotId.value)) {
+    return ctxSpotId.value
+  }
+  if (route.name === 'SpotDetail') {
+    const id = Number(route.params.id)
+    return Number.isFinite(id) ? id : undefined
+  }
+  return undefined
+})
+
+const assistantProvince = computed(() => ctxProvince.value || '')
 
 // 检查是否是首页
 const isHomeActive = computed(() => route.name === 'Home')

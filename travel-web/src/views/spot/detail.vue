@@ -65,14 +65,10 @@
               <span class="price-label">/人</span>
             </div>
 
-            <!-- 从首页推荐进入时展示匹配度与推荐原因 -->
-            <div v-if="recommendInsight.reason || recommendInsight.score != null" class="recommend-insight">
-              <div class="recommend-insight-title">为您推荐</div>
-              <div v-if="recommendInsight.score != null" class="recommend-insight-score">
-                匹配度：<strong>{{ formatRecScore(recommendInsight.score) }}</strong>
-              </div>
-              <p v-if="recommendInsight.reason" class="recommend-insight-reason">{{ recommendInsight.reason }}</p>
-            </div>
+            <SpotRecommendAiPanel
+              :spot="{ id: spot.id, name: spot.name, regionName: spot.regionName || '' }"
+              :recommend-insight="recommendInsight"
+            />
 
             <el-button type="primary" size="large" class="buy-btn" @click="handleBuy">立即购票</el-button>
             <el-button
@@ -127,6 +123,7 @@
       :initial-index="previewIndex"
       @close="previewVisible = false"
     />
+
   </div>
   <div v-else class="page-container">
     <el-skeleton :rows="10" animated />
@@ -134,18 +131,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useAssistantSpotStore } from '@/stores/assistantSpot'
 import { getSpotDetail } from '@/api/spot'
 import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
 import { submitReview, getSpotReviews } from '@/api/review'
 import { getImageUrl } from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import SpotRecommendAiPanel from '@/components/SpotRecommendAiPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const assistantSpotStore = useAssistantSpotStore()
 
 const spot = ref(null)
 const comments = ref([])
@@ -162,11 +162,6 @@ const recommendInsight = reactive({
   reason: '',
   score: null
 })
-
-const formatRecScore = (v) => {
-  const n = Number(v)
-  return Number.isFinite(n) ? n.toFixed(2) : '-'
-}
 
 function readRecommendationFromEntry() {
   recommendInsight.reason = ''
@@ -290,9 +285,23 @@ onMounted(() => {
   fetchComments(true)
 })
 
+onUnmounted(() => {
+  assistantSpotStore.clear()
+})
+
+watch(
+  () => spot.value,
+  (s) => {
+    if (s?.id != null) {
+      assistantSpotStore.setFromSpot(s.id, s.regionName || '')
+    }
+  }
+)
+
 watch(
   () => route.params.id,
   () => {
+    assistantSpotStore.clear()
     readRecommendationFromEntry()
     fetchDetail()
     fetchComments(true)
@@ -438,35 +447,6 @@ watch(
 
 .spot-price-row {
   margin-bottom: 16px;
-}
-
-.recommend-insight {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  background: #f4f4f5;
-  border-radius: 8px;
-  border-left: 4px solid #409eff;
-}
-
-.recommend-insight-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 8px;
-}
-
-.recommend-insight-score {
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 6px;
-}
-
-.recommend-insight-reason {
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.55;
-  margin: 0;
-  white-space: pre-wrap;
 }
 
 .big-price {

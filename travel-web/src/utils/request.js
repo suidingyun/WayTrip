@@ -46,7 +46,7 @@ request.interceptors.response.use(
 
 /**
  * 获取完整图片URL
- * 开发环境走 vite proxy（/uploads -> localhost:8080）
+ * 开发环境走 vite proxy（/uploads -> 与 vite.config.js 中 backend 端口一致）
  * 生产环境可配置为实际服务器地址
  */
 export const getImageUrl = (url) => {
